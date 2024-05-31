@@ -1,0 +1,63 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+/*body {
+  margin-bottom: 60px;
+}*/
+
+@keyframes gradientBackground {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+body.animated-background {
+    background: linear-gradient(270deg, #ff7e5f, #feb47b, #86a8e7, #91eae4);
+    background-size: 800% 800%;
+    animation: gradientBackground 15s ease infinite;
+    color: #fff;
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+
+/* Custom button styling */
+.btn-custom {
+    color: #ffffff;
+    background-color: #6c757d; /* Button color */
+    border-color: #6c757d; /* Border color */
+}
+
+.btn-custom:hover {
+    background-color: #5a6268; /* Button color on hover */
+    border-color: #545b62; /* Border color on hover */
+}
+
+.table thead th {
+    background-color: #343a40; /* Dark background color */
+    color: #ffffff; /* White text color */
+}

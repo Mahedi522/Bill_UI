@@ -1,0 +1,348 @@
+﻿@model Bill_UI.Models.CombinedViewModel
+@{
+    ViewData["Title"] = "Index";
+}
+
+<form id="inventoryForm" data-inventory-id="0">
+    <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap">
+        <div class="form-group d-flex align-items-end">
+            <label for="billNo" class="mr-2"></label>
+            <input type="text" class="form-control mr-2" id="billNo" placeholder="Bill No">
+            <button type="button" class="btn btn-info" onclick="fetchBillDetails()">Find</button>
+        </div>
+
+        <div class="form-group" style="width: 20%;">
+            <label class="form-label"></label>
+            <select asp-for="CustomersNames.Id" id="customerDropdown" class="form-control" asp-items="@(new SelectList(Model.CustomersNames.CNameList, "Value", "Text"))"></select>
+        </div>
+
+        <div class="form-group d-flex align-items-end" style="width: 20%;">
+            <label class="form-label"></label>
+            <select id="productDropdown" class="form-control mr-2">
+                <option value="">Select a product</option>
+            </select>
+            <button type="button" class="btn btn-primary" id="addProductBtn">Add</button>
+        </div>
+
+        <div class="form-group ml-auto" style="width: 20%;">
+            <label for="date">Date</label>
+            <input type="date" class="form-control" id="date">
+        </div>
+    </div>
+
+    <table id="productTable" class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Rate</th>
+                <th>Qty</th>
+                <th>Total Amount</th>
+                <th>Discount (Amt)</th>
+                <th>Net Amount</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+           
+        </tbody>
+    </table>
+
+    <div class="row">
+        <div class="col-md-6 offset-md-6">
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <td>Net Total</td>
+                        <td id="net-total">0.00</td>
+                    </tr>
+                    <tr>
+                        <td>Discount Total</td>
+                        <td id="discount-total">0.00</td>
+                    </tr>
+                    <tr>
+                        <td>Paid Amount</td>
+                        <td><input type="number" class="form-control" id="paid-amount" value="0" oninput="updateDueAmount()"></td>
+                    </tr>
+                    <tr>
+                        <td>Due Amount</td>
+                        <td id="due-amount">0.00</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="text-right mb-5">
+        <button type="submit" class="btn btn-primary">SAVE CHANGES</button>
+    </div>
+</form>
+
+<div id="billResult"></div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let productData = {}; 
+        let billInfo = { inventoryProducts: [] };
+
+        $(document).ready(function () {
+            GetProduct();
+
+            $("#addProductBtn").click(function () {
+                var productId = $("#productDropdown").val();
+                if (productId && productData[productId]) {
+                    var product = productData[productId];
+                    addProductRow(productId, product.name, product.rate);
+                    makingrow(productId, product.name, product.rate);
+                } else {
+                    alert("Invalid product selected.");
+                }
+            });
+
+            $("#inventoryForm").submit(function (event) {
+                event.preventDefault();
+                saveInventory();
+            });
+
+            $("#customerDropdown").change(function () {
+                var customerId = $(this).val();
+                var customerName = $("#customerDropdown option:selected").text();
+                billInfo.customerId = parseInt(customerId);
+                billInfo.customerName = customerName;
+            });
+
+            $("#paid-amount").on("input", function () {
+                updateDueAmount();
+            });
+        });
+
+        function GetProduct() {
+            $.ajax({
+                type: 'POST',
+                url: '/Home/GetProductList',
+                dataType: 'json',
+                success: function (response, status, xhr) {
+                    var dropdown = $("#productDropdown");
+                    dropdown.empty();
+                    dropdown.append('<option value="">Select a product</option>'); 
+
+                    response.forEach(function (product) {
+                        var option = $('<option></option>')
+                            .attr("value", product.id)
+                            .text(product.name);
+                        dropdown.append(option);
+                        productData[product.id] = product;
+                    });
+                },
+                error: function (req, status, error) {
+                    $("#billResult").text("Error: " + error);
+                }
+            });
+        }
+
+        function fetchBillDetails() {
+            var billNo = parseInt($("#billNo").val());
+
+            $.ajax({
+                type: 'POST',
+                url: '/Home/GetDetailsJson',
+                data: { id: billNo },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success === false) {
+                        $("#billResult").html(response.message);
+                        return;
+                    }
+                    billInfo = response;
+                    $("#inventoryForm").data("inventory-id", response.id); // Set inventory id
+
+                    // var data = `
+                    //                     <br>ID: ${response.id}
+                    //                     <br>DateTime: ${response.date}
+                    //                     <br>Bill Number: ${response.billNo}
+                    //                     <br>Customer Id: ${response.customerId}
+                    //                     <br>Customer Name: ${response.customerName}
+                    //                     <br>Total Discount: ${response.totalDiscount}
+                    //                     <br>Total Bill Amount: ${response.totalBillAmount}
+                    //                     <br>Paid Amount: ${response.paidAmount}
+                    //                 `;
+                    // $("#billResult").html(data);
+
+                    $("#date").val(response.date.substring(0, 10));
+                    $("#customerDropdown").val(response.customerId);
+                    $("#paid-amount").val(response.paidAmount); // Set the paid amount for the specific bill
+
+                    var tableBody = $("#productTable tbody");
+                    tableBody.empty();
+
+                    response.inventoryProducts.forEach(function (product) {
+                        makingrow(product.productId, product.productName, product.rate, product.qty, product.discount);
+                    });
+
+                    updateTotals();
+                },
+                error: function (req, status, error) {
+                    $("#billResult").text("An error occurred while fetching the data.");
+                }
+            });
+        }
+
+        function addProductRow(id, name, rate, qty = 1, discount = 0) {
+            var newProduct = {
+                id: parseInt(id, 10),
+                productId: parseInt(id, 10), 
+                productName: name,
+                qty: qty,
+                rate: rate,
+                discount: discount
+            };
+            if (Array.isArray(billInfo.inventoryProducts)) {
+                
+                billInfo.inventoryProducts.push(newProduct);
+            } else {
+                
+                billInfo.inventoryProducts = [newProduct];
+            }
+        }
+
+        function makingrow(id, name, rate, qty = 1, discount = 0) {
+            var totalAmount = rate * qty;
+            var netAmount = totalAmount - discount;
+            var row = `
+                                <tr>
+                                    <td class="product-id" style="display:none;">${id}</td> <!-- Hidden product ID -->
+                                    <td>${name}</td>
+                                    <td class="rate">${rate.toFixed(2)}</td>
+                                    <td><input type="number" class="form-control qty" min="0" value="${qty}" oninput="updateRow(this)"></td>
+                                    <td class="total-amount">${totalAmount.toFixed(2)}</td>
+                                    <td><input type="number" class="form-control discount" min="0" value="${discount}" oninput="updateRow(this)"></td>
+                                    <td class="net-amount">${netAmount.toFixed(2)}</td>
+                                    <td><button type="button" class="btn btn-danger btn-sm" onclick="discardRow(this)">Discard</button></td>
+                                </tr>
+                            `;
+
+            $("#productTable tbody").append(row);
+            updateTotals();
+        }
+
+        function updateRow(element) {
+            var row = $(element).closest('tr');
+            var rate = parseFloat(row.find('.rate').text());
+            var qty = parseFloat(row.find('.qty').val()) || 0;
+            var discount = parseFloat(row.find('.discount').val()) || 0;
+
+            var totalAmount = rate * qty;
+            var netAmount = totalAmount - discount;
+
+            row.find('.total-amount').text(totalAmount.toFixed(2));
+            row.find('.net-amount').text(netAmount.toFixed(2));
+
+
+            var productId = parseInt(row.find('.product-id').text());
+            var product = billInfo.inventoryProducts.find(p => p.productId === productId);
+
+            if (product) {
+                product.qty = qty;
+                product.rate = rate;
+                product.discount = discount;
+            }
+
+            updateTotals();
+        }
+
+        function updateTotals() {
+            var netTotal = 0;
+            var discountTotal = 0;
+
+            $("#productTable tbody tr").each(function () {
+                var totalAmount = parseFloat($(this).find('.total-amount').text());
+                var discount = parseFloat($(this).find('.discount').val()) || 0;
+                var netAmount = totalAmount - discount;
+
+                netTotal += netAmount;
+                discountTotal += discount;
+            });
+
+            $("#net-total").text(netTotal.toFixed(2));
+            $("#discount-total").text(discountTotal.toFixed(2));
+            updateDueAmount();
+
+            billInfo.totalBillAmount = netTotal + discountTotal;
+            billInfo.totalDiscount = discountTotal;
+        }
+
+        function updateDueAmount() {
+            var netTotal = parseFloat($("#net-total").text());
+            var paidAmount = parseFloat($("#paid-amount").val()) || 0;
+            var dueAmount = netTotal - paidAmount;
+
+            $("#due-amount").text(dueAmount.toFixed(2));
+
+            billInfo.dueAmount = dueAmount;
+            billInfo.paidAmount = paidAmount;
+        }
+
+        function discardRow(button) {
+            var row = $(button).closest('tr');
+            var productId = parseInt(row.find('.product-id').text());
+
+
+            billInfo.inventoryProducts = billInfo.inventoryProducts.filter(p => p.productId !== productId);
+
+            row.remove();
+            updateTotals();
+        }
+
+        async function saveInventory() {
+            const inventory = {
+                id: $("#inventoryForm").data("inventory-id"),
+                date: $("#date").val(),
+                billNo: parseInt($("#billNo").val()),
+                customerId: parseInt($("#customerDropdown").val()),
+                customerName: $("#customerDropdown option:selected").text(),
+                totalDiscount: parseFloat($("#discount-total").text()),
+                totalBillAmount: parseFloat($("#net-total").text()) + parseFloat($("#discount-total").text()),
+                dueAmount: parseFloat($("#due-amount").text()),
+                paidAmount: parseFloat($("#paid-amount").val()),
+                inventoryProducts: []
+            };
+
+            $("#productTable tbody tr").each(function () {
+                const productId = $(this).find('.product-id').text(); 
+                const rate = parseFloat($(this).find('.rate').text());
+                const qty = parseInt($(this).find('.qty').val());
+                const discount = parseFloat($(this).find('.discount').val()) || 0;
+
+                if (productId) {
+                    const product = {
+                        productId: parseInt(productId),
+                        rate: rate,
+                        qty: qty,
+                        discount: discount
+                    };
+                    inventory.inventoryProducts.push(product);
+                }
+            });
+
+            console.log('Sending inventory:', JSON.stringify(inventory));
+
+            const response = await fetch(`/Home/EditDetail`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(inventory)
+            });
+
+            console.log('Response status:', response.status);
+
+            if (response.ok) {
+                alert('Inventory saved successfully!');
+            } else {
+                const errorText = await response.text();
+                console.log('Response error text:', errorText);
+                alert('Failed to save inventory.');
+            }
+        }
+    </script>
+}

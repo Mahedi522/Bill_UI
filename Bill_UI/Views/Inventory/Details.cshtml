@@ -1,0 +1,237 @@
+﻿@model Bill_UI.DTOs.InventoryDto
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Bill Details</h1>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h4>General Information</h4>
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <th>Bill No</th>
+                        <td>@Html.DisplayFor(model => model.BillNo)</td>
+                    </tr>
+                    <tr>
+                        <th>Date</th>
+                        <td>@Html.DisplayFor(model => model.Date)</td>
+                    </tr>
+                    <tr>
+                        <th>Customer ID</th>
+                        <td>@Html.DisplayFor(model => model.CustomerId)</td>
+                    </tr>
+                    <tr>
+                        <th>Customer Name</th>
+                        <td>@Html.DisplayFor(model => model.CustomerName)</td>
+                    </tr>
+                    <tr>
+                        <th>Total Discount</th>
+                        <td>@Html.DisplayFor(model => model.TotalDiscount)</td>
+                    </tr>
+                    <tr>
+                        <th>Total Bill Amount</th>
+                        <td>@Html.DisplayFor(model => model.TotalBillAmount)</td>
+                    </tr>
+                    <tr>
+                        <th>Due Amount</th>
+                        <td>@Html.DisplayFor(model => model.DueAmount)</td>
+                    </tr>
+                    <tr>
+                        <th>Paid Amount</th>
+                        <td>@Html.DisplayFor(model => model.PaidAmount)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-6">
+            <h4>Product Details</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Product ID</th>
+                        <th>Product Name</th>
+                        <th>Rate</th>
+                        <th>Qty</th>
+                        <th>Discount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.InventoryProducts)
+                    {
+                        <tr>
+                            <td>@item.ProductId</td>
+                            <td>@item.ProductName</td>
+                            <td>@item.Rate</td>
+                            <td>@item.Qty</td>
+                            <td>@item.Discount</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+<script type="text/javascript">
+    function Display() {
+        var name = $("#name").val();
+        var surname = $("#surname").val();
+        var id = $("#id").val();
+        var gender = $("#gender").val();
+
+        var data = id + " " + name + " " + surname + " " + gender;
+
+        $("#ans").text(data);
+    }
+
+    function Disp() {
+        var name = $("#name").val();
+        var surname = $("#surname").val();
+        var temp = name + " " + surname;
+
+        $("#res").text(temp);
+    }
+
+    function Sum() {
+        var n1 = parseFloat($("#num1").val());
+        var n2 = parseFloat($("#num2").val());
+
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("Add", "Home")',
+            data: { num1: n1, num2: n2 },
+            dataType: 'text',
+            success: function (response, status, xhr) {
+                $("#result").text(response);
+            },
+            error: function (req, status, error) {
+                $("#result").text(error);
+            }
+        })
+    }
+    function Subtract() {
+        var n1 = parseFloat($("#num1").val());
+        var n2 = parseFloat($("#num2").val());
+
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("Subtract", "Home")',
+            data: { num1: n1, num2: n2 },
+            dataType: 'text',
+            success: function (response, status, xhr) {
+                $("#result").text(response);
+            },
+            error: function (req, status, error) {
+                $("#result").text(error);
+            }
+        })
+    }
+
+
+
+    function Calculate() {
+        var n1 = parseFloat($("#num1").val());
+        var n2 = parseFloat($("#num2").val());
+
+        $.ajax({
+            type: 'POST',
+            url: '@Url.Action("Calculate", "Home")',
+            data: { num1: n1, num2: n2 },
+            dataType: 'json',
+            success: function (response, status, xhr) {
+                var data =
+                    "<br>Addition Result is: " + response.add +
+                    "<br>Subtraction Result is: " + response.subtract +
+                    "<br>Multipliation Result is: " + response.multiply +
+                    "<br>Division Result is: " + response.division;
+                $("#result").html(data);
+            },
+            error: function (req, status, error) {
+                $("#result").text(error);
+            }
+        })
+    }
+
+    function GetInfo() {
+        var billNo = parseInt($("#bill").val());
+
+        $.ajax({
+            type: 'POST',
+            url: '/Inventory/GetDetailsJson', // Updated to call the new method
+            data: { id: billNo },
+            dataType: 'json',
+            success: function (response, status, xhr) {
+                var data =
+                    "<br>ID is: " + response.id +
+                    "<br>DateTime : " + response.dateTime +
+                    "<br>Bill Number: " + response.billNo +
+                    "<br>Customer Id: " + response.customerId +
+                    "<br>CustomerName: " + response.customerName +
+                    "<br>TotalDiscount is: " + response.totalDiscount +
+                    "<br>TotalBillAmount is: " + response.totalBillAmount +
+                    "<br>DueAmount is: " + response.paidAmount;
+
+                $("#billResult").html(data);
+            },
+            error: function (req, status, error) {
+                $("#billResult").text(error);
+            }
+        });
+    }
+
+
+    <br />
+        < div class="container" >
+            <div class="row" >
+                <div class="col-md-6" >
+                    <div class="mb-3" >
+                        <label for= "exampleFormControlInput1" class= "form-label" > First Number < /label>
+                            < input type = "number" class="form-control" id = "bill" placeholder = "Enter The Bill Number" >
+                                </div>
+                                < /div>
+                                < /div>
+                                < /div>
+                                < button class="btn btn-primary" onclick = "GetInfo()" > Find < /button>
+                                    < br />
+                                    <h3 id="billResult" > </h3>
+
+                                        < br />
+    function GetProcudt() {
+        var billNo = parseInt($("#bill").val());
+
+        $.ajax({
+            type: 'POST',
+            url: '/Inventory/GetDetailsJson', // Updated to call the new method
+            data: { id: billNo },
+            dataType: 'json',
+            success: function (response, status, xhr) {
+                var data =
+                    "<br>ID is: " + response.id +
+                    "<br>DateTime : " + response.dateTime +
+                    "<br>Bill Number: " + response.billNo +
+                    "<br>Customer Id: " + response.customerId +
+                    "<br>CustomerName: " + response.customerName +
+                    "<br>TotalDiscount is: " + response.totalDiscount +
+                    "<br>TotalBillAmount is: " + response.totalBillAmount +
+                    "<br>DueAmount is: " + response.paidAmount;
+
+                $("#billResult").html(data);
+            },
+            error: function (req, status, error) {
+                $("#billResult").text(error);
+            }
+        });
+    }
+
+
+</script>

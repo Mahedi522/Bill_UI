@@ -1,0 +1,29 @@
+﻿@model Bill_UI.Models.Customer
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<div class="container">
+    <h1 class="display-4">Customer Details</h1>
+    <hr />
+    <div class="row">
+        <div class="col-md-6">
+            <dl class="row">
+                <dt class="col-sm-3">ID:</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.Id)</dd>
+                <dt class="col-sm-3">Name:</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.Name)</dd>
+                <dt class="col-sm-3">Address:</dt>
+                <dd class="col-sm-9">@Html.DisplayFor(model => model.Address)</dd>
+            </dl>
+        </div>
+        <div class="col-md-6">
+            
+        </div>
+    </div>
+    <div class="mt-4">
+        <a class="btn btn-primary" asp-action="Edit" asp-route-id="@Model.Id">Edit</a>
+        <a class="btn btn-secondary" asp-action="GetCustomers">Back to List</a>
+    </div>
+</div>

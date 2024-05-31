@@ -1,0 +1,44 @@
+﻿@model IEnumerable<Bill_UI.Models.Inventory>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">All Inventories</h1>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Inventory ID</th>
+            <th>Date</th>
+            <th>Bill No</th>
+            <th>Customer ID</th>
+            <th>Total Discount</th>
+            <th>Total Bill Amount</th>
+            <th>Due Amount</th>
+            <th>Paid Amount</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.Date</td>
+                <td>@item.BillNo</td>
+                <td>@item.CustomerId</td>
+                <td>@item.TotalDiscount</td>
+                <td>@item.TotalBillAmount</td>
+                <td>@item.DueAmount</td>
+                <td>@item.PaidAmount</td>
+                <td>
+                    <a class="btn btn-custom btn-sm me-1" asp-action="Details" asp-route-id="@item.Id">Details</a>
+                    @* <a class="btn btn-danger btn-sm" asp-action="Delete" asp-route-id="@item.Id">Delete</a> *@
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
